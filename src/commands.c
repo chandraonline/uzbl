@@ -58,7 +58,8 @@ CommandInfo cmdlist[] =
     { "add_cookie",                     add_cookie, 0                  },
     { "delete_cookie",                  delete_cookie, 0               },
     { "clear_cookies",                  clear_cookies, 0               },
-    { "download",                       download, 0                    }
+    { "download",                       download, 0                    },
+    { "screenshot",                     screenshot, 0                  }
 };
 
 void
@@ -310,6 +311,39 @@ download(WebKitWebView *web_view, GArray *argv, GString *result) {
         g_object_unref(download);
 
     g_object_unref(req);
+}
+
+void
+screenshot(WebKitWebView *page, GArray *argv, GString *result) {
+    (void) result;
+
+    if(argv->len < 1)
+        return;
+
+    if (uzbl.state.verbose) {
+       printf("about to take a screenshot and save to file: %s\n",argv_idx(argv,0));
+    }
+
+    GdkWindow   * window;
+    GdkColormap * colormap;
+    gint          width;
+    gint          height;
+    GdkPixbuf   * pixbuf;
+
+    g_object_get(G_OBJECT(page), "window", &window, NULL);
+    gdk_window_get_size(GDK_WINDOW(window), &width, &height);
+    colormap = gdk_window_get_colormap(GDK_WINDOW(window));
+
+    /* gdk-pixbuf api: http://library.gnome.org/devel/gdk-pixbuf/stable/ */
+    pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, FALSE, 8, width, height);
+    gdk_pixbuf_get_from_drawable(pixbuf, GDK_DRAWABLE(window), colormap,
+                                 0, 0, 0, 0, width , height);
+    gdk_pixbuf_save(pixbuf, argv_idx(argv,0), "png", NULL, NULL);
+    g_object_unref(G_OBJECT(pixbuf));
+
+    if (uzbl.state.verbose) {
+      printf("saved PNG into %s\n", argv_idx(argv,0));
+    }
 }
 
 void
